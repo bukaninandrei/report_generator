@@ -44,16 +44,18 @@ class ReportGenerator
   end
 
   def draw_report_item(user, acc, sessions_count)
-    joined_dates = acc[:d].empty? ? '' : "\"#{acc[:d].join('", "')}\""
+    joined_dates = acc[:dates].empty? ? '' : "\"#{acc[:dates].join('", "')}\""
+    joined_browsers = acc[:browsers].join(DELIMITER)
+
     <<~TEXT
       "#{user[0]}": {
-        "alwaysUsedChrome": #{bool_to_s(acc[:co])},
-        "browsers": "#{acc[:b].join(DELIMITER)}",
+        "alwaysUsedChrome": #{bool_to_s(acc[:chrome_only])},
+        "browsers": "#{joined_browsers}",
         "dates": [#{joined_dates}],
         "longestSession": "#{user[MAX_SPENT_IDX]}",
         "sessionsCount": "#{sessions_count}",
         "totalTime": "#{user[TOTAL_SPENT_IDX]}",
-        "usedIE": #{bool_to_s(acc[:ie])}
+        "usedIE": #{bool_to_s(acc[:use_ie])}
       }
     TEXT
   end
@@ -62,27 +64,19 @@ class ReportGenerator
     file_out << "}\n}"
   end
 
-  def prepare_item_data(user_session)
-    i = 0
-    acc = { b: [], d: [], co: true, ie: false }
-
-    while i < user_session.length
-      browser_id = user_session[i]
-      date_id = user_session[i + 1]
-      i += 2
-
-      acc[:b] << @parser.get_browser_by_id(browser_id)
-      acc[:d] << @parser.get_date_by_id(date_id)[0..9]
+  def prepare_item_data(user_sessions)
+    acc = { browsers: [], dates: [], chrome_only: true, use_ie: false }
+    @parser.each_session(user_sessions) do |browser_id, date_id|
+      acc[:browsers] << @parser.get_browser_by_id(browser_id)
+      acc[:dates] << @parser.get_date_by_id(date_id)[0..9]
 
       if @parser.browser_present?(:ie, browser_id)
-        acc[:ie] = true
-        acc[:co] = false
+        acc[:use_ie] = true
+        acc[:chrome_only] = false
         next
       end
-
-      acc[:co] = false unless @parser.browser_present?(:ch, browser_id)
+      acc[:chrome_only] = false unless @parser.browser_absent?(:ch, browser_id)
     end
-    acc[:co] = false if acc[:b].empty?
     acc
   end
 

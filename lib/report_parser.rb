@@ -20,9 +20,17 @@ class ReportParser
     end
   end
 
+  def each_session(list)
+    i = 0
+    while i < list.length
+      yield(list[i], list[i + 1])
+      i += 2
+    end
+  end
+
   def counters(code)
-    return @users.length if code == :users_cnt
-    return @total_sessions_cnt if code == :total_sessions_cnt
+    return @users.length         if code == :users_cnt
+    return @total_sessions_cnt   if code == :total_sessions_cnt
     return @uniq_browsers.length if code == :browsers_cnt
 
     0
@@ -49,13 +57,12 @@ class ReportParser
     @uniq_dates[id]
   end
 
-  def browsers_map
-    @uniq_browsers
-  end
-
-  # group: ch - chrome instances, ie - internet explorers
   def browser_present?(group, searchable_id)
     @browser_ids[group].bsearch_index { |bs| bs == searchable_id }
+  end
+
+  def browser_absent?(group, searchable_id)
+    !browser_present?(group, searchable_id)
   end
 
   private
