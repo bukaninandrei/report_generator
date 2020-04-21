@@ -9,10 +9,10 @@ class ReportGenerator
     @file_name = output_file
   end
 
-  def make_report(file_name)
+  def make_report
     @parser.parse_data
 
-    file_out = File.open(file_name, 'w')
+    file_out = File.open(@file_name, 'w')
 
     draw_report_header(file_out)
     draw_report_body(file_out)
@@ -65,8 +65,7 @@ class ReportGenerator
   end
 
   def prepare_item_data(user_sessions)
-    acc = { browsers: [], dates: [], chrome_only: true, use_ie: false }
-    @parser.each_session(user_sessions) do |browser_id, date_id|
+    @parser.collect_sessions(user_sessions) do |browser_id, date_id, acc|
       acc[:browsers] << @parser.get_browser_by_id(browser_id)
       acc[:dates] << @parser.get_date_by_id(date_id)[0..9]
 
@@ -77,7 +76,6 @@ class ReportGenerator
       end
       acc[:chrome_only] = false unless @parser.browser_absent?(:ch, browser_id)
     end
-    acc
   end
 
   def bool_to_s(val)

@@ -20,12 +20,14 @@ class ReportParser
     end
   end
 
-  def each_session(list)
+  def collect_sessions(list)
+    acc = { browsers: [], dates: [], chrome_only: true, use_ie: false }
     i = 0
     while i < list.length
-      yield(list[i], list[i + 1])
+      yield(list[i], list[i + 1], acc)
       i += 2
     end
+    acc
   end
 
   def counters(code)
